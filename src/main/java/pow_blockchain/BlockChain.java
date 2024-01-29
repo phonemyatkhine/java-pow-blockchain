@@ -1,4 +1,5 @@
 package pow_blockchain;
+
 import java.util.ArrayList;
 
 public class BlockChain {
@@ -22,7 +23,7 @@ public class BlockChain {
             Block previousBlock = blockchain.get(i - 1);
 
             if (!currentBlock.getHash().equals(currentBlock.calculateHash()) ||
-                !currentBlock.getPreviousHash().equals(previousBlock.getHash())) {
+                    !currentBlock.getPreviousHash().equals(previousBlock.getHash())) {
                 return false;
             }
         }
@@ -32,9 +33,24 @@ public class BlockChain {
     public ArrayList<Block> getBlockchain() {
         return blockchain;
     }
-    
+
     public void setBlockchain(ArrayList<Block> blockchain) {
         this.blockchain = blockchain;
     }
+
+    public int getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(int difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public int size() {
+        return blockchain.size();
+    }
     
+    public Block getLatestBlock() {
+        return blockchain.get(blockchain.size() - 1);
+    }
 }
