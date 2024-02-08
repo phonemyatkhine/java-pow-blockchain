@@ -1,4 +1,5 @@
-package pow_blockchain;
+package pow_blockchain.services;
+
 import java.util.Date;
 
 public class Block {

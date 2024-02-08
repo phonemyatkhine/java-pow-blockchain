@@ -1,26 +1,26 @@
-package pow_blockchain;
+package pow_blockchain.services;
 
+import pow_blockchain.services.Block;
 import java.util.ArrayList;
 
 public class BlockChain {
-    private ArrayList<Block> blockchain;
-    private int difficulty;
+    public ArrayList<Block> chain;
+    public int difficulty;
 
     public BlockChain(int difficulty) {
-        this.blockchain = new ArrayList<>();
+        this.chain = new ArrayList<>();
         this.difficulty = difficulty;
-        addBlock(new Block(0, "Genesis Block", "0"));
     }
 
     public void addBlock(Block newBlock) {
         newBlock.mineBlock(difficulty);
-        blockchain.add(newBlock);
+        chain.add(newBlock);
     }
 
     public boolean isValidChain() {
-        for (int i = 1; i < blockchain.size(); i++) {
-            Block currentBlock = blockchain.get(i);
-            Block previousBlock = blockchain.get(i - 1);
+        for (int i = 1; i < chain.size(); i++) {
+            Block currentBlock = chain.get(i);
+            Block previousBlock = chain.get(i - 1);
 
             if (!currentBlock.getHash().equals(currentBlock.calculateHash()) ||
                     !currentBlock.getPreviousHash().equals(previousBlock.getHash())) {
@@ -30,12 +30,17 @@ public class BlockChain {
         return true;
     }
 
-    public ArrayList<Block> getBlockchain() {
-        return blockchain;
+    public ArrayList<String> getChainString() {
+        //return chain as string array
+        ArrayList<String> chainString = new ArrayList<>();
+        for (Block block : chain) {
+            chainString.add(block.toString());
+        }
+        return chainString;
     }
 
     public void setBlockchain(ArrayList<Block> blockchain) {
-        this.blockchain = blockchain;
+        this.chain = blockchain;
     }
 
     public int getDifficulty() {
@@ -47,10 +52,10 @@ public class BlockChain {
     }
 
     public int size() {
-        return blockchain.size();
+        return chain.size();
     }
     
     public Block getLatestBlock() {
-        return blockchain.get(blockchain.size() - 1);
+        return chain.get(chain.size() - 1);
     }
 }
