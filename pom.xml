@@ -24,12 +24,12 @@
         </dependency>
 
         <!-- Spring Boot DevTools for hot reloading -->
-        <dependency>
+        <!-- <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <version>3.2.2</version>
             <optional>true</optional>
-        </dependency>
+        </dependency> -->
 
         <!-- Spring Boot Starter Test for testing -->
         <dependency>

@@ -32,8 +32,10 @@ public class BlockChain {
 
     public ArrayList<String> getChainString() {
         //return chain as string array
+        System.out.println("Returning chain as string array");
+        System.out.println(this.chain);
         ArrayList<String> chainString = new ArrayList<>();
-        for (Block block : chain) {
+        for (Block block : this.chain) {
             chainString.add(block.toString());
         }
         return chainString;

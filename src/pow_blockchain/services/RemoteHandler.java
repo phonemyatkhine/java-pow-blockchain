@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import pow_blockchain.interfaces.RemoteInterface;
 import pow_blockchain.services.BlockChain;
 import pow_blockchain.services.Block;
+import java.util.List;
+import pow_blockchain.services.Participants;
+import java.rmi.Naming;
 
 /**
  *
@@ -14,21 +17,62 @@ import pow_blockchain.services.Block;
 public class RemoteHandler extends UnicastRemoteObject implements RemoteInterface {
 
     private final BlockChain blockchain;
+    private final int PORT;
+    public List<String> participants;
+    public String PARTICIPANTS_FILE;
+    public Participants participantsObj;
 
-    public RemoteHandler(BlockChain blockchain) throws RemoteException {
+    public RemoteHandler(BlockChain blockchain, int Port) throws RemoteException {
         super();
+        this.PORT = Port;
+        this.PARTICIPANTS_FILE = "participants_" + Port + ".ser";
         this.blockchain = blockchain;
-    }
+        this.participantsObj = new Participants(this.PARTICIPANTS_FILE);
+        this.participants = this.participantsObj.getParticipants();
+        this.participantsObj.saveParticipants(this.participants);
+    }   
 
 
     @Override
     public void addBlock(Block block) throws RemoteException {
-        blockchain.addBlock(block);
+        this.blockchain.addBlock(block);
     }
 
     @Override
     public ArrayList<String> getCurrentChain() throws RemoteException {
-        return blockchain.getChainString();
+        return this.blockchain.getChainString();
     }
 
+    @Override
+    public BlockChain getBlockChain() throws RemoteException {
+        return this.blockchain;
+    }
+
+    @Override 
+    public List<String> getParticipants() throws RemoteException {
+        return this.participantsObj.getParticipants();
+    }
+
+    @Override
+    public void updateParticipants(List<String> participants) throws RemoteException {
+        this.participantsObj.saveParticipants(participants);
+        System.out.println("Updating participants <<REMOTE HANDLER>> : " + participants);
+    }
+
+    @Override
+    public void broadcastParticipants(List<String> participants) throws RemoteException {
+        for (String participant : participants) {
+            if (participant.equals("rmi://127.0.0.1:"+ this.PORT+"/blockchain")) {
+                continue;
+            }
+            try {
+                RemoteInterface remote = (RemoteInterface) Naming.lookup(
+                        participant);
+                remote.updateParticipants(participants);
+                System.out.println("Broadcasted participants to " + participant);
+            } catch (Exception ex) {
+                System.err.println("Failed to send to " + participant + "! Moving on...");
+            }
+        }
+    }
 }

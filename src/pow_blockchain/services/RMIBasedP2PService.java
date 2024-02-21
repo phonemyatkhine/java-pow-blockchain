@@ -2,11 +2,11 @@ package pow_blockchain.services;
 
 import java.util.List;
 import java.util.ArrayList;
-import pow_blockchain.interfaces.P2PInterface;
 import pow_blockchain.services.BlockChain;
 import pow_blockchain.services.Block;
 import pow_blockchain.services.RemoteHandler;
 import pow_blockchain.interfaces.RemoteInterface;
+import pow_blockchain.services.Participants;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,30 +21,37 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.LinkedList;
+import java.util.ArrayList;
 
-
-public class RMIBasedP2PService implements P2PInterface {
+public class RMIBasedP2PService{
     
-    public String PARTICIPANTS_FILE = "participants.ser";
     private BlockChain blockchain = new BlockChain(1);
+    private Participants participantsObj;
     private List<String> participants;
+    private String PARTICIPANTS_FILE;
     private int port;
 
     public RMIBasedP2PService(int port) {
         this.port = port;
-        this.participants = getParticipants();
-        this.PARTICIPANTS_FILE = PARTICIPANTS_FILE + "_" + port + ".ser";
+        this.PARTICIPANTS_FILE = "participants_" + port + ".ser";
+        this.participantsObj = new Participants(this.PARTICIPANTS_FILE);
+        
+        this.participants = new ArrayList<>();
+        this.participants.add("rmi://127.0.0.1:"+port+"/blockchain"); 
+        this.participantsObj.saveParticipants(this.participants);
+
+
+        System.out.println("Participants: " + this.participants);
+        System.out.println("P2P Service started on port " + port);
+
         try {
             startRMIHandler(port);
         } catch (Exception e) {
             System.err.println(e);        
         }
         
-        registerAsParticipant(port);
     }   
     
-
-    @Override
     public void broadcastBlock(Block block) {
 
         System.out.println("Broadcast <" + block + "> to " + this.participants);
@@ -62,7 +69,6 @@ public class RMIBasedP2PService implements P2PInterface {
         }
     }
 
-    @Override
     public ArrayList<String> getCurrentChain() {
         try {
             RemoteInterface remote = (RemoteInterface) Naming.lookup(this.participants.get(0));
@@ -80,83 +86,75 @@ public class RMIBasedP2PService implements P2PInterface {
         }
     }
 
-    private BlockChain initialChainLink() {
-        // Block root = new Block();
-        return blockchain;
-    }
-
     /**
      * Start the RMI server and listen on mentioned port.
      * @param port
      * @throws RemoteException
      */
-    private void startRMIHandler(final int port) throws RemoteException {
-        RemoteHandler rh = new RemoteHandler(blockchain);
+    private void startRMIHandler(final int port) throws RemoteException, java.rmi.NotBoundException, java.net.MalformedURLException{
+
+        if (port == 10051) { // if this is the genesis node, create the genesis block
+           this.blockchain = mineGenesisBlock();
+        } 
         try {
+            RemoteHandler rh = new RemoteHandler(this.blockchain, port);
             Registry rgsty = LocateRegistry.createRegistry(port);
-            rgsty.rebind("powchain", rh);
-            System.out.println("Registry created and bound successfully.");
+            rgsty.rebind("blockchain", rh);
+            System.out.println("Registry created and bound successfully at port: " + port);
         } catch (RemoteException e) {
             e.printStackTrace();
             System.err.println("Failed to create registry: " + e.getMessage());
-        }
-    }
+        } 
 
-    /**
-     * Add myself (my port) to the list of participants.
-     * @param port
-     */
-    private void registerAsParticipant(int port) {
-        String myself = "rmi://127.0.0.1: ," + String.valueOf(port) + "/blockchain";
-        List<String> participants = getParticipants();
-        for (String participant : participants) {
-            if (participant.equals(myself)) {
-                // I'm already in the list, nothing to do...
-                return;
-            }
-        }
-
-        participants.add(myself);
-        saveParticipants(participants);
-    }
-
-    /**
-     * Read the list of participants from the shared file.
-     * @return
-     */
-    private List<String> getParticipants() {
         try {
-            FileInputStream file = new FileInputStream(PARTICIPANTS_FILE);
-            ObjectInputStream objectIn = new ObjectInputStream(file);
-            List<String> participants = (List<String>) objectIn.readObject();
-            objectIn.close();
-            return participants;
-
-        } catch (FileNotFoundException ex) {
-            // file does not exist => I'm the first participant
-            return new LinkedList<>();
-
-        } catch (IOException | ClassNotFoundException ex) {
-            throw new RuntimeException(ex);
+            if (port == 10051) { return; }
+            registerOnGenesisNode("rmi://127.0.0.1:10051/blockchain", port);
+        } catch (java.rmi.NotBoundException e) {
+            System.err.println("Failed to create registry: " + e.getMessage());
+            throw e; // Optionally, rethrow if you want the caller to handle it
+        } catch (java.net.MalformedURLException e) {
+            // Handle MalformedURLException
+            throw e; // Optionally, rethrow if you want the caller to handle it
         }
+
     }
 
-    /**
-     * Save the list of participants to the shared file.
-     * @param participants
-     */
-    private void saveParticipants(List<String> participants) {
+    public void registerOnGenesisNode(String genesisNodePath, int port) throws java.rmi.NotBoundException, java.net.MalformedURLException, java.rmi.RemoteException {
         try {
-            FileOutputStream fileOut = new FileOutputStream(PARTICIPANTS_FILE);
-            ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
-            objectOut.writeObject(participants);
-            objectOut.close();
+            RemoteInterface genesisNode = (RemoteInterface) Naming.lookup(genesisNodePath);
+            System.out.println("Registering to genesisNodePath : " + genesisNodePath);
+            System.out.println("Current Node Participants: " + this.participants);
 
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException(ex);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            List<String> genesisParticipants = genesisNode.getParticipants();
+            System.out.println("Genesis Participants: " + genesisParticipants);
+            this.participants.addAll(genesisParticipants);
+            System.out.println("Updated Participants: " + this.participants);
+            
+            genesisNode.updateParticipants(this.participants);
+            genesisNode.broadcastParticipants(this.participants);
+
+            System.out.println("Blockchain: " + this.blockchain);
+            System.out.println("Genesis Node Blockchain: " + genesisNode.getCurrentChain());
+            System.out.println("Genesis Node Blockchain: " + genesisNode.getBlockChain());
+            // this.blockchain = genesisNode.getBlockChain();
+            // System.out.println("Blockchain: " + this.blockchain);
+
+        } catch (java.rmi.RemoteException e) {
+            System.err.println("Failed to send to " + genesisNodePath + "! Can't register...");
+        } catch (Exception e) {
+            System.err.println(e);
+            throw e;
         }
     }
 
+    public List<String> getParticipants() {
+        return this.participantsObj.getParticipants();
+    }
+
+    public BlockChain mineGenesisBlock() {
+        this.blockchain.addBlock(new Block(1, "Genesis Block", "0"));
+        System.out.println("Mining Genesis Block...");
+        System.out.println(this.blockchain.getChainString());
+        return this.blockchain;
+    }
 }   

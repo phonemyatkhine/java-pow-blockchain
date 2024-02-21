@@ -6,12 +6,13 @@ import java.io.File;
 @Component
 public class ParticipantsCleanUp {
 
-    public static final String PARTICIPANTS_FILE = "participants.ser";
+    public static final String PARTICIPANTS_FILE = "participants_";
 
     public void performCleanup(int port) {
         System.out.println("Cleaning up participants...");
         //delete file from path PARTICIPANTS_FILE
-        File fileToDelete = new File(PARTICIPANTS_FILE + "_" + port + ".ser");
+        System.out.println("Deleting file: " + PARTICIPANTS_FILE + port + ".ser");
+        File fileToDelete = new File(PARTICIPANTS_FILE + port + ".ser");
 
         if(!fileToDelete.exists()) {
             System.out.println("File does not exist");

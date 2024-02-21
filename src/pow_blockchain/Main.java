@@ -12,23 +12,15 @@ import pow_blockchain.services.RMIBasedP2PService;
 @RestController
 @RequestMapping("/")
 public class Main {
-
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("Port number is missing!");
-            System.err.println("Usage : mvn spring-boot:run -Dspring-boot.run.arguments=<port>");
-            System.exit(1);
-        }
-
-        int port = Integer.valueOf(args[0]);
-
-        ConfigurableApplicationContext context = SpringApplication.run(Main.class, args);
-        ShutdownHook shutdownHook = context.getBean(ShutdownHook.class);
-        shutdownHook.registerShutdownHook(port);
-        new RMIBasedP2PService(port);
-
+    private static RMIBasedP2PService P2PService;
+    // private static RMIBasedP2PService P2PService;
+    // private final BlockChain blockchain = new BlockChain(1);
+    
+    @GetMapping("/checkParticipants")
+    public String checkParticipants() {
+        return "Participants: " + P2PService.getParticipants();
     }
-      // private final BlockChain blockchain = new BlockChain(1);
+
 
     // @PostMapping("/addBlock")
     // public String addBlock(@RequestBody BlockData blockData) {
@@ -47,16 +39,23 @@ public class Main {
     //     return "Is Blockchain Valid? " + blockchain.isValidChain();
     // }
 
-    // // Inner class to represent the data for adding a new block
-    // static class BlockData {
-    //     private String data;
-
-    //     public String getData() {
-    //         return data;
-    //     }
-
-    //     public void setData(String data) {
-    //         this.data = data;
-    //     }
-    // }
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.err.println("Port number is missing!");
+            System.err.println("Usage : mvn spring-boot:run -D spring-boot.run.arguments=\"<rmiPort> <port>\"");
+            // System.exit(1);
+        }
+        int rmiPort = args[0].equals("null") ? 10051 : Integer.valueOf(args[0]);
+        int webPort = args[1].equals("null") ? 8080 : Integer.valueOf(args[1]);
+        System.out.println("RMI_PORT: " + rmiPort);
+        System.out.println("PORT: " + webPort);
+    
+        System.getProperties().put( "server.port", webPort );
+        ConfigurableApplicationContext context = SpringApplication.run(Main.class, args);
+        ShutdownHook shutdownHook = context.getBean(ShutdownHook.class);
+        shutdownHook.registerShutdownHook(rmiPort);
+    
+        P2PService = new RMIBasedP2PService(rmiPort);
+    }
+   
 }
