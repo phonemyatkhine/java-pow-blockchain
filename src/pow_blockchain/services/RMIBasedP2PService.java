@@ -7,6 +7,7 @@ import pow_blockchain.services.Block;
 import pow_blockchain.services.RemoteHandler;
 import pow_blockchain.interfaces.RemoteInterface;
 import pow_blockchain.services.Participants;
+import pow_blockchain.common.BlockData;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -30,16 +31,17 @@ public class RMIBasedP2PService{
     private List<String> participants;
     private String PARTICIPANTS_FILE;
     private int port;
-
+    private RemoteHandler remoteHandler;
+    private String selfRmi;
+    
     public RMIBasedP2PService(int port) {
         this.port = port;
         this.PARTICIPANTS_FILE = "participants_" + port + ".ser";
         this.participantsObj = new Participants(this.PARTICIPANTS_FILE);
-        
+        this.selfRmi = "rmi://127.0.0.1:"+port+"/blockchain";
         this.participants = new ArrayList<>();
-        this.participants.add("rmi://127.0.0.1:"+port+"/blockchain"); 
+        this.participants.add(this.selfRmi); 
         this.participantsObj.saveParticipants(this.participants);
-
 
         System.out.println("Participants: " + this.participants);
         System.out.println("P2P Service started on port " + port);
@@ -53,36 +55,27 @@ public class RMIBasedP2PService{
     }   
     
     public void broadcastBlock(Block block) {
-
-        System.out.println("Broadcast <" + block + "> to " + this.participants);
-
-        for (String participant : this.participants) {
-            try {
-                RemoteInterface remote = (RemoteInterface) Naming.lookup(
-                        participant);
-                remote.addBlock(block);
-            } catch (RemoteException ex) {
-                System.err.println("Failed to send to " + participant + "! Moving on...");
-            } catch (NotBoundException | MalformedURLException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
-
-    public ArrayList<String> getCurrentChain() {
         try {
-            RemoteInterface remote = (RemoteInterface) Naming.lookup(this.participants.get(0));
-
-            ArrayList<String> chain = remote.getCurrentChain();
-            if (chain == null) {
-                // The chain has not started yet...
-                // return initialChainLink();
+            this.participants = this.remoteHandler.getParticipants();
+            System.out.println("Participantz: " + participants);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        System.out.println("Broadcast <" + block + "> to " +  this.participants);
+        for (String participant :  this.participants) {
+            System.out.println("Self RMI: " + this.selfRmi + ".Participant: " + participant);
+            if (!participant.equals(this.selfRmi)) {
+                System.out.println("Sending <"+ block+ "> to " + participant);
+                try {
+                    RemoteInterface remote = (RemoteInterface) Naming.lookup(
+                            participant);
+                    remote.addBlock(block);
+                } catch (RemoteException ex) {
+                    System.err.println("Failed to send to " + participant + "! Moving on...");
+                } catch (NotBoundException | MalformedURLException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
-
-            return chain;
-
-        } catch (NotBoundException | MalformedURLException | RemoteException ex) {
-            throw new RuntimeException(ex);
         }
     }
 
@@ -97,9 +90,9 @@ public class RMIBasedP2PService{
            this.blockchain = mineGenesisBlock();
         } 
         try {
-            RemoteHandler rh = new RemoteHandler(this.blockchain, port);
+            this.remoteHandler = new RemoteHandler(this.blockchain, port);
             Registry rgsty = LocateRegistry.createRegistry(port);
-            rgsty.rebind("blockchain", rh);
+            rgsty.rebind("blockchain", remoteHandler);
             System.out.println("Registry created and bound successfully at port: " + port);
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -133,12 +126,13 @@ public class RMIBasedP2PService{
             genesisNode.updateParticipants(this.participants);
             genesisNode.broadcastParticipants(this.participants);
 
-            System.out.println("Blockchain: " + this.blockchain);
-            System.out.println("Genesis Node Blockchain: " + genesisNode.getCurrentChain());
-            System.out.println("Genesis Node Blockchain: " + genesisNode.getBlockChain());
-            // this.blockchain = genesisNode.getBlockChain();
-            // System.out.println("Blockchain: " + this.blockchain);
-
+            try {
+                this.blockchain = genesisNode.getBlockChain();
+                this.remoteHandler.setBlockChain(this.blockchain);
+                System.out.println("Blockchain: "+ this.blockchain.getChainString());
+            } catch (Exception e) {
+                System.out.println(e);
+            }
         } catch (java.rmi.RemoteException e) {
             System.err.println("Failed to send to " + genesisNodePath + "! Can't register...");
         } catch (Exception e) {
@@ -152,9 +146,63 @@ public class RMIBasedP2PService{
     }
 
     public BlockChain mineGenesisBlock() {
-        this.blockchain.addBlock(new Block(1, "Genesis Block", "0"));
+        this.blockchain.addBlock(new Block(1,"GenesisBlock", "0", "0", "0"));
+        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "1.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "2.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "3.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "3.5", "1A", this.blockchain.getLatestBlock().getHash()));
         System.out.println("Mining Genesis Block...");
         System.out.println(this.blockchain.getChainString());
         return this.blockchain;
+    }
+    
+    public void mineBlock(String blockData) {
+        BlockData data = StringUtil.jsonToBlockData(blockData);
+        String mqttTopic = data.getMqttTopic();
+        String consumption = data.getConsumption();
+        String deviceId = data.getDeviceId();
+        Block newBlock = new Block(this.blockchain.size(), mqttTopic, consumption, deviceId, this.blockchain.getLatestBlock().getHash());
+        this.blockchain.addBlock(newBlock);
+        broadcastBlock(newBlock);
+    }
+
+    public String getChainString() {
+        try {
+            return this.remoteHandler.getChainString();
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return "Error"; 
+    }
+
+    public List<Block> getBlockchain() {
+        return this.blockchain.getBlockchain();
+    }
+
+    public List<BlockData> getTopicConsumption(String topic) {
+        try {
+            return this.remoteHandler.getTopicConsumption(topic);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return new ArrayList<BlockData>();
+    }
+
+    public List<BlockData> getTopicDailyConsumption(String topic, String date) {
+        try {
+            return this.remoteHandler.getTopicDailyConsumption(topic, date);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return new ArrayList<BlockData>();
+    }
+
+    public List<BlockData> getTopicMonthlyConsumption(String topic, String date) {
+        try {
+            return this.remoteHandler.getTopicMonthlyConsumption(topic, date);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return new ArrayList<BlockData>();
     }
 }   

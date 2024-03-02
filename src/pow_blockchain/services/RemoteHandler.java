@@ -9,15 +9,16 @@ import pow_blockchain.services.Block;
 import java.util.List;
 import pow_blockchain.services.Participants;
 import java.rmi.Naming;
-
+import java.io.Serializable;
+import pow_blockchain.common.BlockData;
 /**
  *
  * @author Thibault Debatty // Phone Myat Khine
  */
-public class RemoteHandler extends UnicastRemoteObject implements RemoteInterface {
+public class RemoteHandler extends UnicastRemoteObject implements RemoteInterface, Serializable {
 
-    private final BlockChain blockchain;
     private final int PORT;
+    private BlockChain blockchain;
     public List<String> participants;
     public String PARTICIPANTS_FILE;
     public Participants participantsObj;
@@ -39,8 +40,13 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteInterfac
     }
 
     @Override
-    public ArrayList<String> getCurrentChain() throws RemoteException {
-        return this.blockchain.getChainString();
+    public String getChainString() throws RemoteException {
+        return  StringUtil.blockchainToJson(this.blockchain.getBlockchain());
+    }
+
+    @Override
+    public void setBlockChain(BlockChain blockchain) throws RemoteException {
+        this.blockchain = blockchain;
     }
 
     @Override
@@ -75,4 +81,20 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteInterfac
             }
         }
     }
+
+    @Override
+    public List<BlockData> getTopicConsumption(String topic) throws RemoteException {
+        return this.blockchain.getTopicConsumption(topic);
+    }
+
+    @Override
+    public List<BlockData> getTopicDailyConsumption(String topic, String date) throws RemoteException {
+        return this.blockchain.getTopicDailyConsumption(topic, date);
+    }
+
+    @Override
+    public List<BlockData> getTopicMonthlyConsumption(String topic, String date) throws RemoteException {
+        return this.blockchain.getTopicMonthlyConsumption(topic, date);
+    }
+
 }

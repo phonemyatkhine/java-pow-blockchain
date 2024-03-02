@@ -1,19 +1,30 @@
 package pow_blockchain.services;
 
 import java.util.Date;
+import java.io.Serializable;
 
-public class Block {
+public class Block implements Serializable {
     private String indexHash;
+    private String mqttTopic;
+    private String consumption;
+    private String deviceId;
     private long timestamp;
-    private String data;
     private String previousHash;
     private String hash;
     private int nonce; // Proof-of-Work variable
 
-    public Block(int index, String data, String previousHash) {
+    public Block(int index, String mqttTopic, String consumption, String deviceId, String previousHash) {
         this.indexHash = StringUtil.applySha256(String.valueOf(new Date().getTime() + index));
-        this.timestamp = new Date().getTime();
-        this.data = data;
+        this.mqttTopic = mqttTopic;
+        this.consumption = consumption;
+        this.deviceId = deviceId;
+        if(consumption == "3.5") {
+            //time - 1 month
+            this.timestamp = new Date().getTime() - 2592000000L;
+        } else {
+            this.timestamp = new Date().getTime();
+        }
+        // this.timestamp = new Date().getTime();
         this.previousHash = previousHash;
         this.nonce = 0;
         this.hash = calculateHash();
@@ -23,7 +34,9 @@ public class Block {
         return StringUtil.applySha256(
                 indexHash +
                 timestamp +
-                data +
+                mqttTopic +
+                consumption +
+                deviceId +
                 previousHash +
                 nonce
         );
@@ -54,9 +67,18 @@ public class Block {
         return timestamp;
     }
 
-    public String getData() {
-        return data;
+    public String getMqttTopic() {
+        return mqttTopic;
     }
+
+    public String getConsumption() {
+        return consumption;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
 
     public int getNonce() {
         return nonce;

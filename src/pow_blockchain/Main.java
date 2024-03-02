@@ -2,42 +2,65 @@ package pow_blockchain;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import pow_blockchain.hooks.ShutdownHook;
 import pow_blockchain.services.RMIBasedP2PService;
+import pow_blockchain.common.BlockData;
+import pow_blockchain.services.StringUtil;
+import pow_blockchain.services.Block;
+
+import java.util.List;
 
 @SpringBootApplication
 @RestController
 @RequestMapping("/")
+
 public class Main {
-    private static RMIBasedP2PService P2PService;
-    // private static RMIBasedP2PService P2PService;
-    // private final BlockChain blockchain = new BlockChain(1);
     
-    @GetMapping("/checkParticipants")
+    private static RMIBasedP2PService P2PService;
+    
+    @GetMapping("/participants")
     public String checkParticipants() {
         return "Participants: " + P2PService.getParticipants();
     }
 
+    @PostMapping("/block")
+    public String addBlock(@RequestBody String blockData) {
+        System.out.println("Data: " + blockData);
+        P2PService.mineBlock(blockData);
+        return "Block added successfully.";
+    }
 
-    // @PostMapping("/addBlock")
-    // public String addBlock(@RequestBody BlockData blockData) {
-    //     Block newBlock = new Block(blockchain.size(), blockData.getData(), blockchain.getLatestBlock().getHash());
-    //     blockchain.addBlock(newBlock);
-    //     return "Block added successfully.";
-    // }
+    @GetMapping("/blockchain")
+    public List<Block> getBlockchain() {
+        return P2PService.getBlockchain();
+    }
+    
+    @GetMapping("/topic/{topicName}/consumption")
+    public List<BlockData> getTopicConsumption(@PathVariable(name = "topicName") String topicName) {
+        return P2PService.getTopicConsumption(topicName);
+    }
+    
 
-    // @GetMapping("/getBlockchain")
-    // public String getBlockchain() {
-    //     return StringUtil.toJson(blockchain.getBlockchain());
-    // }
+    @GetMapping("/topic/{topicName}/daily-consumption/{date}")
+    public List<BlockData> getTopicDailyConsumption(@PathVariable(name = "topicName") String topicName, @PathVariable(name = "date") String date) {
+        System.out.println("Daily Consumption Date: " + date);
+        return P2PService.getTopicDailyConsumption(topicName, date);
+    }
 
-    // @GetMapping("/isValid")
-    // public String isValid() {
-    //     return "Is Blockchain Valid? " + blockchain.isValidChain();
-    // }
+    @GetMapping("/topic/{topicName}/monthly-consumption/{date}")
+    public List<BlockData> getTopicMonthlyConsumption(@PathVariable(name = "topicName") String topicName, @PathVariable(name = "date") String date) {
+        System.out.println("Monthly Consumption Date: " + date);
+        return P2PService.getTopicMonthlyConsumption(topicName, date);
+    }
+    
 
     public static void main(String[] args) {
         if (args.length < 1) {

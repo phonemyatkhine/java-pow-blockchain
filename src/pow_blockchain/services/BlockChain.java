@@ -2,8 +2,12 @@ package pow_blockchain.services;
 
 import pow_blockchain.services.Block;
 import java.util.ArrayList;
+import pow_blockchain.services.StringUtil;
+import java.io.Serializable;
+import java.util.List;
+import pow_blockchain.common.BlockData;
 
-public class BlockChain {
+public class BlockChain implements Serializable {
     public ArrayList<Block> chain;
     public int difficulty;
 
@@ -30,15 +34,12 @@ public class BlockChain {
         return true;
     }
 
-    public ArrayList<String> getChainString() {
-        //return chain as string array
-        System.out.println("Returning chain as string array");
-        System.out.println(this.chain);
-        ArrayList<String> chainString = new ArrayList<>();
-        for (Block block : this.chain) {
-            chainString.add(block.toString());
-        }
-        return chainString;
+    public String getChainString() {
+        return StringUtil.blockchainToJson(this.chain);
+    }
+
+    public ArrayList<Block> getBlockchain() {
+        return this.chain;
     }
 
     public void setBlockchain(ArrayList<Block> blockchain) {
@@ -60,4 +61,46 @@ public class BlockChain {
     public Block getLatestBlock() {
         return chain.get(chain.size() - 1);
     }
+
+    public List<BlockData> getTopicConsumption(String topic) {
+        List<BlockData> topicConsumption = new ArrayList<>();
+        for (Block block : chain) {
+            if (block.getMqttTopic().equals(topic)) {
+                long timestamp = block.getTimestamp();
+                String date = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));             
+                topicConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), date));
+            }
+        }
+        return topicConsumption;
+    }
+
+    public List<BlockData> getTopicDailyConsumption(String topic, String date) {
+        System.out.println("Date: " + date);
+        List<BlockData> topicDailyConsumption = new ArrayList<>();
+        for (Block block : chain) {
+            long timestamp = block.getTimestamp();
+            String dateBlock = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));
+            System.out.println("Date: " + dateBlock);
+            //block mqtt topic equals and date includes in dateblock
+            if (block.getMqttTopic().equals(topic) && dateBlock.contains(date)) {
+                topicDailyConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), dateBlock));
+            }
+        }
+        return topicDailyConsumption;
+    }
+
+    public List<BlockData> getTopicMonthlyConsumption(String topic, String date) {
+        System.out.println("Date: " + date);
+        List<BlockData> topicMonthlyConsumption = new ArrayList<>();
+        for (Block block : chain) {
+            long timestamp = block.getTimestamp();
+            String dateBlock = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));
+            System.out.println("Date: " + dateBlock);
+            if (block.getMqttTopic().equals(topic) && dateBlock.contains(date)) {
+                topicMonthlyConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), dateBlock));
+            }
+        }
+        return topicMonthlyConsumption;
+    }
 }
+
