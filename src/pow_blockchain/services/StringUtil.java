@@ -50,9 +50,18 @@ public class StringUtil {
         sb.append("}");
         return sb.toString();
     }
-
+    //"{'deviceId': 'computer003', 'consumption': '0.5896406269564061kWh', 'timestamp': 1709761504016}"
+    //  {"mqttTopic": "kitchen_appliance_consumption", "consumption": "0.66kWh", "deviceId": "fridge002", "timestamp": 1709542238785}
     public static BlockData jsonToBlockData(String json) {
+        System.out.println("json: " + json);
         String[] parts = json.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = parts[i].replace("\"", "").replace("{", "").replace("}", "").replace(" ", "");
+        }
+        System.out.println("potato");
+        System.out.println(parts[3]);
+        System.out.println(parts[3].split(":")[1]);
+
         String mqttTopic = parts[0].split(":")[1];
         String consumption = parts[1].split(":")[1];
         String deviceId = parts[2].split(":")[1];

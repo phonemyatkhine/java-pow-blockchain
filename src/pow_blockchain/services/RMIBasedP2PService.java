@@ -23,6 +23,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class RMIBasedP2PService{
     
@@ -146,11 +147,11 @@ public class RMIBasedP2PService{
     }
 
     public BlockChain mineGenesisBlock() {
-        this.blockchain.addBlock(new Block(1,"GenesisBlock", "0", "0", "0"));
-        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "1.5", "1A", this.blockchain.getLatestBlock().getHash()));
-        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "2.5", "1A", this.blockchain.getLatestBlock().getHash()));
-        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "3.5", "1A", this.blockchain.getLatestBlock().getHash()));
-        this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "3.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        this.blockchain.addBlock(new Block(1,"GenesisBlock", "0", "0", "0", new Date().getTime() + ""));
+        // this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "1.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        // this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "2.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        // this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "3.5", "1A", this.blockchain.getLatestBlock().getHash()));
+        // this.blockchain.addBlock(new Block(this.blockchain.size(), "testTopic", "3.5", "1A", this.blockchain.getLatestBlock().getHash()));
         System.out.println("Mining Genesis Block...");
         System.out.println(this.blockchain.getChainString());
         return this.blockchain;
@@ -161,7 +162,9 @@ public class RMIBasedP2PService{
         String mqttTopic = data.getMqttTopic();
         String consumption = data.getConsumption();
         String deviceId = data.getDeviceId();
-        Block newBlock = new Block(this.blockchain.size(), mqttTopic, consumption, deviceId, this.blockchain.getLatestBlock().getHash());
+        //if timestamp exists in data, use it. else use current time
+        String timestamp = data.getTimestamp() != null ? data.getTimestamp() : new Date().getTime() + "";
+        Block newBlock = new Block(this.blockchain.size(), mqttTopic, consumption, deviceId, this.blockchain.getLatestBlock().getHash(), timestamp);
         this.blockchain.addBlock(newBlock);
         broadcastBlock(newBlock);
     }
@@ -200,6 +203,33 @@ public class RMIBasedP2PService{
     public List<BlockData> getTopicMonthlyConsumption(String topic, String date) {
         try {
             return this.remoteHandler.getTopicMonthlyConsumption(topic, date);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return new ArrayList<BlockData>();
+    }
+
+    public List<BlockData> getDeviceConsumption(String deviceId) {
+        try {
+            return this.remoteHandler.getDeviceConsumption(deviceId);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return new ArrayList<BlockData>();
+    }
+
+    public List<BlockData> getDeviceDailyConsumption(String deviceId, String date) {
+        try {
+            return this.remoteHandler.getDeviceDailyConsumption(deviceId, date);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        return new ArrayList<BlockData>();
+    }
+
+    public List<BlockData> getDeviceMonthlyConsumption(String deviceId, String date) {
+        try {
+            return this.remoteHandler.getDeviceMonthlyConsumption(deviceId, date);
         } catch (Exception e) {
             System.err.println(e);
         }

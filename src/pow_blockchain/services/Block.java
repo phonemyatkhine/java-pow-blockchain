@@ -13,18 +13,23 @@ public class Block implements Serializable {
     private String hash;
     private int nonce; // Proof-of-Work variable
 
-    public Block(int index, String mqttTopic, String consumption, String deviceId, String previousHash) {
+    // public Block(int index, String mqttTopic, String consumption, String deviceId, String previousHash) {
+    //     this.indexHash = StringUtil.applySha256(String.valueOf(new Date().getTime() + index));
+    //     this.mqttTopic = mqttTopic;
+    //     this.consumption = consumption;
+    //     this.deviceId = deviceId;       
+    //     this.timestamp = new Date().getTime();
+    //     this.previousHash = previousHash;
+    //     this.nonce = 0;
+    //     this.hash = calculateHash();
+    // }
+
+    public Block(int index, String mqttTopic, String consumption, String deviceId, String previousHash, String timestamp) {
         this.indexHash = StringUtil.applySha256(String.valueOf(new Date().getTime() + index));
         this.mqttTopic = mqttTopic;
         this.consumption = consumption;
         this.deviceId = deviceId;
-        if(consumption == "3.5") {
-            //time - 1 month
-            this.timestamp = new Date().getTime() - 2592000000L;
-        } else {
-            this.timestamp = new Date().getTime();
-        }
-        // this.timestamp = new Date().getTime();
+        this.timestamp = Long.parseLong(timestamp);
         this.previousHash = previousHash;
         this.nonce = 0;
         this.hash = calculateHash();

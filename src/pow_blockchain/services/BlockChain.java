@@ -76,11 +76,12 @@ public class BlockChain implements Serializable {
 
     public List<BlockData> getTopicDailyConsumption(String topic, String date) {
         System.out.println("Date: " + date);
+        System.out.println("Topic: " + topic);
         List<BlockData> topicDailyConsumption = new ArrayList<>();
         for (Block block : chain) {
+            System.out.println("Block: " + block.getMqttTopic() + " " + block.getConsumption() + " " + block.getDeviceId() + " " + new java.util.Date(block.getTimestamp()));
             long timestamp = block.getTimestamp();
             String dateBlock = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));
-            System.out.println("Date: " + dateBlock);
             //block mqtt topic equals and date includes in dateblock
             if (block.getMqttTopic().equals(topic) && dateBlock.contains(date)) {
                 topicDailyConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), dateBlock));
@@ -102,5 +103,44 @@ public class BlockChain implements Serializable {
         }
         return topicMonthlyConsumption;
     }
+
+    public List<BlockData> getDeviceConsumption(String deviceId) {
+        List<BlockData> deviceConsumption = new ArrayList<>();
+        for (Block block : chain) {
+            if (block.getDeviceId().equals(deviceId)) {
+                long timestamp = block.getTimestamp();
+                String date = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));
+                deviceConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), date));
+            }
+        }
+        return deviceConsumption;
+    }
+
+    public List<BlockData> getDeviceDailyConsumption(String deviceId, String date) {
+        System.out.println("Date: " + date);
+        List<BlockData> deviceDailyConsumption = new ArrayList<>();
+        for (Block block : chain) {
+            long timestamp = block.getTimestamp();
+            String dateBlock = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));
+            if (block.getDeviceId().equals(deviceId) && dateBlock.contains(date)) {
+                deviceDailyConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), dateBlock));
+            }
+        }
+        return deviceDailyConsumption;
+    }
+
+    public List<BlockData> getDeviceMonthlyConsumption(String deviceId, String date) {
+        System.out.println("Date: " + date);
+        List<BlockData> deviceMonthlyConsumption = new ArrayList<>();
+        for (Block block : chain) {
+            long timestamp = block.getTimestamp();
+            String dateBlock = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp));
+            if (block.getDeviceId().equals(deviceId) && dateBlock.contains(date)) {
+                deviceMonthlyConsumption.add(new BlockData(block.getMqttTopic(), block.getConsumption(), block.getDeviceId(), dateBlock));
+            }
+        }
+        return deviceMonthlyConsumption;
+    }
+    
 }
 

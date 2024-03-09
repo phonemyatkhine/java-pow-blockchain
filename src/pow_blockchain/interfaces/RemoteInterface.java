@@ -22,4 +22,8 @@ public interface RemoteInterface extends Remote{
     public List<BlockData> getTopicConsumption(String topic) throws RemoteException;
     public List<BlockData> getTopicDailyConsumption(String topic, String date) throws RemoteException;
     public List<BlockData> getTopicMonthlyConsumption(String topic, String date) throws RemoteException;
+    public List<BlockData> getDeviceConsumption(String deviceId) throws RemoteException;
+    public List<BlockData> getDeviceDailyConsumption(String deviceId, String date) throws RemoteException;
+    public List<BlockData> getDeviceMonthlyConsumption(String deviceId, String date) throws RemoteException;
+    
 }

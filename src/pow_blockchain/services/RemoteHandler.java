@@ -97,4 +97,19 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteInterfac
         return this.blockchain.getTopicMonthlyConsumption(topic, date);
     }
 
+    @Override
+    public List<BlockData> getDeviceConsumption(String deviceId) throws RemoteException {
+        return this.blockchain.getDeviceConsumption(deviceId);
+    }
+
+    @Override
+    public List<BlockData> getDeviceDailyConsumption(String deviceId, String date) throws RemoteException {
+        return this.blockchain.getDeviceDailyConsumption(deviceId, date);
+    }
+
+    @Override
+    public List<BlockData> getDeviceMonthlyConsumption(String deviceId, String date) throws RemoteException {
+        return this.blockchain.getDeviceMonthlyConsumption(deviceId, date);
+    }
+    
 }

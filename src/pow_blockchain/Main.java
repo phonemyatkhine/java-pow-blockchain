@@ -61,12 +61,30 @@ public class Main {
         return P2PService.getTopicMonthlyConsumption(topicName, date);
     }
     
+    @GetMapping("/device/{deviceId}/consumption")
+    public List<BlockData> getDeviceConsumption(@PathVariable(name = "deviceId") String deviceId) {
+        return P2PService.getDeviceConsumption(deviceId);
+    }
+
+    @GetMapping("/device/{deviceId}/daily-consumption/{date}")
+    public List<BlockData> getDeviceDailyConsumption(@PathVariable(name = "deviceId") String deviceId, @PathVariable(name = "date") String date) {
+        System.out.println("Daily Consumption Date: " + date + " DeviceId: " + deviceId);
+        return P2PService.getDeviceDailyConsumption(deviceId, date);
+    }
+
+    @GetMapping("/device/{deviceId}/monthly-consumption/{date}")
+    public List<BlockData> getDeviceMonthlyConsumption(@PathVariable(name = "deviceId") String deviceId, @PathVariable(name = "date") String date) {
+        System.out.println("Monthly Consumption Date: " + date + " DeviceId: " + deviceId);
+        return P2PService.getDeviceMonthlyConsumption(deviceId, date);
+    }
+    
 
     public static void main(String[] args) {
         if (args.length < 1) {
             System.err.println("Port number is missing!");
             System.err.println("Usage : mvn spring-boot:run -D spring-boot.run.arguments=\"<rmiPort> <port>\"");
             // System.exit(1);
+            //mvn spring-boot:run -D spring-boot.run.arguments="10051 8080"
         }
         int rmiPort = args[0].equals("null") ? 10051 : Integer.valueOf(args[0]);
         int webPort = args[1].equals("null") ? 8080 : Integer.valueOf(args[1]);
