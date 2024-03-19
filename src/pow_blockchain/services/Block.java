@@ -53,6 +53,7 @@ public class Block implements Serializable {
             nonce++;
             hash = calculateHash();
         }
+        System.out.println("");
         System.out.println("Block mined: " + hash);
     }
 

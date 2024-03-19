@@ -58,7 +58,6 @@ public class StringUtil {
         for (int i = 0; i < parts.length; i++) {
             parts[i] = parts[i].replace("\"", "").replace("{", "").replace("}", "").replace(" ", "");
         }
-        System.out.println("potato");
         System.out.println(parts[3]);
         System.out.println(parts[3].split(":")[1]);
 

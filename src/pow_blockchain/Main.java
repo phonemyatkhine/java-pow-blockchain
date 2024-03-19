@@ -61,6 +61,12 @@ public class Main {
         return P2PService.getTopicMonthlyConsumption(topicName, date);
     }
     
+    // @GetMapping("/topic/{topicName}/weekly-prediction/{date}")
+    // public String getTopicWeeklyPrediction(@PathVariable(name = "topicName") String topicName, @PathVariable(name = "date") String date) {
+    //     System.out.println("Weekly Prediction Date: " + date);
+    //     return P2PService.getTopicWeeklyPrediction(topicName, date);
+    // }
+
     @GetMapping("/device/{deviceId}/consumption")
     public List<BlockData> getDeviceConsumption(@PathVariable(name = "deviceId") String deviceId) {
         return P2PService.getDeviceConsumption(deviceId);
@@ -100,3 +106,9 @@ public class Main {
     }
    
 }
+
+
+//mvn spring-boot:run -D spring-boot.run.arguments="10051 8080"
+//mvn spring-boot:run -D spring-boot.run.arguments="10052 8081"
+//python3 MqttSubscriber.py kitchen_appliance_consumption 8080
+//python3 MqttSubscriber1.py home_office_devices_consumption 8081
